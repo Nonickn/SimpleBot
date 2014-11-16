@@ -91,7 +91,7 @@ namespace SteamBot
         public static void SerializePoints()
         {
             string serial = Newtonsoft.Json.JsonConvert.SerializeObject(points);
-            File.WriteAllText("points.json", serial);
+            File.WriteAllText("data/points.json", serial);
         }
 
         public static void AddPoints(long ID, int point)
@@ -110,6 +110,7 @@ namespace SteamBot
                 points.Add(ID, 0);
                 return 0;
             }
+            SerializePoints();
         }
 
         //This method gets the price for an item off of backpack.tf, given a defindex.

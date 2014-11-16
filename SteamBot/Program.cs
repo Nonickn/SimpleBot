@@ -34,6 +34,7 @@ namespace SteamBot
 
         public static void Main(string[] args)
         {
+            Console.WriteLine("Fork me on GitHub! http://bit.ly/1uABGoK");
             if (!File.Exists("data/apikeys.json"))
             {
                 Console.WriteLine("Your API info needs to be cached.");
@@ -264,6 +265,8 @@ namespace SteamBot
             }
             if (msg == "help")
             {
+                if (!File.Exists("data/help.txt"))
+                    File.WriteAllText("data/help.txt", "Tell the bot owner to fill out their help.txt!");
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, File.ReadAllText("data/help.txt"));
             }
             if (callback.Sender.ConvertToUInt64() == ownerID)
