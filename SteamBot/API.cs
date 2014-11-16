@@ -288,8 +288,6 @@ namespace SteamBot
         }
 
         //This method gets the price for an item off of backpack.tf, given a defindex.
-        //As of now, it only works for Craftable, Tradable, and the first quality of the given item.
-        //The method was made primarily with keys in mind
         //TODO Cache API result
         public static Tuple<float, string> GetPrices(int itemquality, string defindex, string bptfapi)
         {
