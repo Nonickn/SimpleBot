@@ -212,7 +212,7 @@ namespace SteamBot
             {
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Geting Steam backpack data...");
                 var stock = API.GetCurrencyStock(steamuser.SteamID, apikeys["STEAM"]);
-                friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Keys: {0}, Refined Metal: {1}", stock.Key, stock.Value));
+                friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Keys: {0}, Refined Metal: {1}", stock.Item1, stock.Item2));
             }
             if (msg == "price")
             {
@@ -228,7 +228,7 @@ namespace SteamBot
             {
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Geting Steam backpack data...");
                 var stock = API.GetCurrencyStock(callback.Sender, apikeys["STEAM"]);
-                int keys = stock.Key;
+                int keys = stock.Item1;
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Getting price data from backpack.tf...");
                 float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
                 float buy = baseprice - (baseprice * buymult);
@@ -238,7 +238,7 @@ namespace SteamBot
                 switch (keys)
                 {
                     case -1:
-                        if(stock.Value == 15)
+                        if(stock.Item2 == 15)
                             friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Your Steam inventory is private. Please make sure it is public in order to trade.");
                         else
                             friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "There was an error getting your inventory. Please try again.");

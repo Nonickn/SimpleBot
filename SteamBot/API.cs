@@ -30,12 +30,12 @@ namespace SteamBot
         //This method fetches the amount of Keys and Refined Metal from any given Steam inventory
         //As a rule, I try to keep all downloads into strings in order to reduce filesystem footprint. However, this causes a bit more RAM usage.
         //TODO Cache API Results
-        public static KeyValuePair<int, int> GetCurrencyStock(UInt64 ID, string steamapi)
+        public static Tuple<int, int> GetCurrencyStock(UInt64 ID, string steamapi)
         {
             var items = new List<KeyValuePair<int, int>>();
-            //The key is the amount of keys, and the value is the amount of refined metal
-            //In case of an error, the key is -1, and the value is the status code from the Steam API
-            //If the Steam API completely failed, then both the key and value are -1
+            //The first value is the amount of keys, and the second value is the amount of refined metal
+            //In case of an error, the first is -1, and the second is the status code from the Steam API
+            //If the Steam API completely failed, then both the first and second are -1
             try
             {
                 WebClient client = new WebClient();
@@ -44,7 +44,7 @@ namespace SteamBot
 
                 if (result.result.status == 15)
                 {
-                    return new KeyValuePair<int, int>(-1, 15);
+                    return new Tuple<int, int>(-1, 15);
                 }
                 else
                 {
@@ -60,19 +60,19 @@ namespace SteamBot
                         {
                             refcount++;
                         }
-                        if (item.Key == 5021)
+                        if (item.Key == 5021 || item.Key == 5713)
                         {
                             keycount++;
                         }
                     }
-                    return new KeyValuePair<int, int>(keycount, refcount);
+                    return new Tuple<int, int>(keycount, refcount);
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
-            return new KeyValuePair<int, int>(-1, -1);
+            return new Tuple<int, int>(-1, -1);
         }
 
         //The loyalty point system works using a dictionary of SteamIDs and integers.
@@ -91,7 +91,7 @@ namespace SteamBot
         public static void SerializePoints()
         {
             string serial = Newtonsoft.Json.JsonConvert.SerializeObject(points);
-            File.WriteAllText("data/points.json", serial);
+            File.WriteAllText("points.json", serial);
         }
 
         public static void AddPoints(long ID, int point)
