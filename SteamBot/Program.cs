@@ -36,6 +36,18 @@ namespace SteamBot
 
         public static void Main(string[] args)
         {
+            if (!File.Exists("data/apikeys.json"))
+            {
+                Console.WriteLine("Your API info needs to be cached.");
+                Console.Write("Backpack.TF? ");
+                string bptf = Console.ReadLine();
+                Console.Write("Steam? ");
+                string steam = Console.ReadLine();
+                var dict = new Dictionary<string, string>();
+                dict.Add("BPTF", bptf);
+                dict.Add("STEAM", steam);
+                File.WriteAllText("data/apikeys.json", Newtonsoft.Json.JsonConvert.SerializeObject(dict));
+            }
             apikeys = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("data/apikeys.json"));
             API.DeserializePoints();
             if (!File.Exists("data/login.json"))
@@ -58,22 +70,10 @@ namespace SteamBot
             InitCallbacks();
             Console.WriteLine("Connecting to Steam...");
             client.Connect();
-            Thread thread = new Thread(new ThreadStart(ReadLine));
-            thread.Start();
             isRunning = true;
             while (isRunning)
             {
                 manager.RunCallbacks();
-                if (newtext)
-                {
-                    string[] cmds = newmsg.Split();
-                    if (cmds[0] == "shutdown")
-                    {
-                        API.SerializePoints();
-                        Environment.Exit(0);
-                    }
-                    newtext = false;
-                }
             }
         }
 
@@ -328,15 +328,6 @@ namespace SteamBot
                         Console.WriteLine(e.Message);
                     }
                 }
-            }
-        }
-
-        public static void ReadLine()
-        {
-            while (true)
-            {
-                newmsg = Console.ReadLine();
-                newtext = true;
             }
         }
     }
