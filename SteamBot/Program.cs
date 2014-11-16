@@ -22,8 +22,6 @@ namespace SteamBot
         static bool isRunning;
         static string user, pass;
         static string code, auth;
-        static bool newtext;
-        static string newmsg;
 
         static string name = "ʢ"; //Steam persona name of the bot
 
@@ -236,6 +234,7 @@ namespace SteamBot
                 float buy = baseprice - (baseprice * buymult);
                 buy = API.ScrapifyPrice(buy);
                 float totalPay = keys * buy;
+                //Grammar is cool!
                 switch (keys)
                 {
                     case -1:
