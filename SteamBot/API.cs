@@ -12,6 +12,179 @@ namespace SteamBot
 
         public static Dictionary<long, int> points;
 
+        public static float GetTradeOfferRefinedMetal(string steamapi, string bptfapi, string msg)
+        {
+            try
+            {
+                var tradeItems = new List<string>();
+                var itemdata = new List<Tuple<int, string>>();
+                WebClient web = new WebClient();
+                string offersjson = web.DownloadString("http://api.steampowered.com/IEconService/GetTradeOffers/v1/?get_received_offers=1&active_only=1&key=" + steamapi);
+                dynamic offersresult = Newtonsoft.Json.JsonConvert.DeserializeObject(offersjson);
+                foreach (var offer in offersresult.response.trade_offers_received)
+                {
+                    foreach (var item in offer.items_to_receive)
+                    {
+                        if (offer.message.ToString() == msg)
+                            tradeItems.Add(item.classid.ToString());
+                    }
+                }
+                foreach (var classid in tradeItems)
+                {
+                    string itemsjson = web.DownloadString("http://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v0001/?appid=440&classid0=" + classid + "&class_count=1&key=" + steamapi);
+                    dynamic itemsresult = Newtonsoft.Json.JsonConvert.DeserializeObject(itemsjson);
+                    foreach (var id in itemsresult.result)
+                    {
+                        foreach (var item in id)
+                        {
+                            try
+                            {
+                                itemdata.Add(new Tuple<int, string>(Convert.ToInt32(item.app_data.quality.ToString()), item.app_data.def_index.ToString()));
+                            }
+                            catch (Exception)
+                            {
+
+                            }
+                        }
+                    }
+                }
+                float total = 0;
+                foreach (var itemdatum in itemdata)
+                {
+                    string defindex = itemdatum.Item2;
+                    int quality = itemdatum.Item1;
+                    if (defindex == "5002")
+                        total++;
+                    else if (defindex == "5021"){
+                        float keyprice = GetPrices(6, "5021", bptfapi).Item1;
+                        keyprice = ScrapifyPrice(keyprice - (keyprice * .04F));
+                        total += keyprice;
+                    }
+                    else
+                    {
+                        var price = GetPrices(quality, defindex, bptfapi);
+                        switch (price.Item2)
+                        {
+                            case "metal":
+                                if (defindex == "5021")
+                                    total += ScrapifyPrice(price.Item1 - (price.Item1 * .04F));
+                                else
+                                    total += ScrapifyPrice(price.Item1 * .75F);
+                                break;
+                            case "keys":
+                                float keyprice = GetPrices(6, "5021", bptfapi).Item1;
+                                keyprice = ScrapifyPrice(keyprice + (keyprice * .05F));
+                                total += ScrapifyPrice((keyprice * price.Item1) * .75F);
+                                break;
+                        }
+                    }
+                }
+                return ScrapifyPrice(total);
+            }
+            catch (System.Net.WebException)
+            {
+                return -1;
+            }
+        }
+
+        public static float GetTradeOfferSellingRefinedMetal(string steamapi, string bptfapi, string msg)
+        {
+            try
+            {
+                var tradeItems = new List<string>();
+                var itemdata = new List<Tuple<int, string>>();
+                WebClient web = new WebClient();
+                string offersjson = web.DownloadString("http://api.steampowered.com/IEconService/GetTradeOffers/v1/?get_received_offers=1&active_only=1&key=" + steamapi);
+                dynamic offersresult = Newtonsoft.Json.JsonConvert.DeserializeObject(offersjson);
+                foreach (var offer in offersresult.response.trade_offers_received)
+                {
+                    if (offer.items_to_give == null)
+                        return 0;
+                    foreach (var item in offer.items_to_give)
+                    {
+                        if (offer.message.ToString() == msg)
+                            tradeItems.Add(item.classid.ToString());
+                    }
+                }
+                foreach (var classid in tradeItems)
+                {
+                    string itemsjson = web.DownloadString("http://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v0001/?appid=440&classid0=" + classid + "&class_count=1&key=" + steamapi);
+                    dynamic itemsresult = Newtonsoft.Json.JsonConvert.DeserializeObject(itemsjson);
+                    foreach (var id in itemsresult.result)
+                    {
+                        foreach (var item in id)
+                        {
+                            try
+                            {
+                                itemdata.Add(new Tuple<int, string>(Convert.ToInt32(item.app_data.quality.ToString()), item.app_data.def_index.ToString()));
+                            }
+                            catch (Exception)
+                            {
+
+                            }
+                        }
+                    }
+                }
+                float total = 0;
+                foreach (var itemdatum in itemdata)
+                {
+                    string defindex = itemdatum.Item2;
+                    int quality = itemdatum.Item1;
+                    if (defindex == "5002")
+                        total++;
+                    else
+                    {
+                        var price = GetPrices(quality, defindex, bptfapi);
+                        switch (price.Item2)
+                        {
+                            case "metal":
+                                if (defindex == "5021")
+                                    total += ScrapifyPrice(price.Item1 + (price.Item1 * .05F));
+                                else
+                                    total += ScrapifyPrice(price.Item1 * 1.15F);
+                                break;
+                            case "keys":
+                                float keyprice = GetPrices(6, "5021", bptfapi).Item1;
+                                keyprice = ScrapifyPrice(keyprice + (keyprice * .05F));
+                                total += ScrapifyPrice((keyprice * price.Item1) * 1.15F);
+                                break;
+                        }
+                    }
+                }
+                return ScrapifyPrice(total);
+            }
+            catch (System.Net.WebException)
+            {
+                return -1;
+            }
+        }
+
+        public static void DeclineTradeOffer(string steamapi, string msg)
+        {
+            try
+            {
+                var tradeItems = new List<string>();
+                var itemdata = new List<Tuple<int, string>>();
+                WebClient web = new WebClient();
+                string offersjson = web.DownloadString("http://api.steampowered.com/IEconService/GetTradeOffers/v1/?get_received_offers=1&active_only=1&key=" + steamapi);
+                dynamic offersresult = Newtonsoft.Json.JsonConvert.DeserializeObject(offersjson);
+                foreach (var offer in offersresult.response.trade_offers_received)
+                {
+                    if (offer.message.ToString() == msg)
+                    {
+                        web.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                        string param = "key=" + steamapi + "&tradeofferid=" + offer.tradeofferid;
+                        string HtmlResult = web.UploadString("http://api.steampowered.com/IEconService/DeclineTradeOffer/v1/", param);
+                    }
+                }
+            }
+            catch (System.Net.WebException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
+        }
+
         //Magical function to make multiples of 1/9 out of any decimal number
         //This is especially useful for turning the raw calculated prices into actual prices
         public static float ScrapifyPrice(float price)
@@ -39,7 +212,7 @@ namespace SteamBot
             try
             {
                 WebClient client = new WebClient();
-                String backpackFile = client.DownloadString("http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=" + steamapi + "&steamid=" + ID);
+                string backpackFile = client.DownloadString("http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=" + steamapi + "&steamid=" + ID);
                 dynamic result = Newtonsoft.Json.JsonConvert.DeserializeObject(backpackFile);
 
                 if (result.result.status == 15)
@@ -103,21 +276,22 @@ namespace SteamBot
 
         public static int GetPoints(long ID)
         {
+            DeserializePoints();
             if (points.ContainsKey(ID))
                 return points[ID];
             else
             {
                 points.Add(ID, 0);
+                SerializePoints();
                 return 0;
             }
-            SerializePoints();
         }
 
         //This method gets the price for an item off of backpack.tf, given a defindex.
         //As of now, it only works for Craftable, Tradable, and the first quality of the given item.
         //The method was made primarily with keys in mind
         //TODO Cache API result
-        public static double GetPrices(string defindex, string bptfapi)
+        public static Tuple<float, string> GetPrices(int itemquality, string defindex, string bptfapi)
         {
             WebClient client = new WebClient();
             string priceFile = client.DownloadString("http://backpack.tf/api/IGetPrices/v4/?key=" + bptfapi);
@@ -137,9 +311,15 @@ namespace SteamBot
                             {
                                 foreach (var quality in price)
                                 {
-                                    Console.WriteLine("Key price fetched: {0} {1}", quality.Tradable.Craftable[0].value, quality.Tradable.Craftable[0].currency);
-                                    keyprice = Convert.ToDouble(quality.Tradable.Craftable[0].value.ToString());
-                                    return keyprice;
+                                    if (price.Name == itemquality.ToString())
+                                    {
+                                        System.Threading.Thread.Sleep(3000); //For some reason, this fixes a bug where a null reference comes up
+                                        Console.WriteLine("Price fetched: {0} {1}", quality.Tradable.Craftable[0].value, quality.Tradable.Craftable[0].currency);
+                                        keyprice = Convert.ToDouble(quality.Tradable.Craftable[0].value.ToString());
+                                        string currency = quality.Tradable.Craftable[0].currency.ToString();
+                                        var tuple = new Tuple<float, string>((float)keyprice, currency);
+                                        return tuple;
+                                    }
                                 }
                             }
                         }
@@ -151,7 +331,7 @@ namespace SteamBot
                 Console.WriteLine(e.Message);
             }
             Console.WriteLine("Parse complete");
-            return -1;
+            return new Tuple<float,string>(-1F, "");
         }
     }
 }

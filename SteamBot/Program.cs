@@ -28,7 +28,8 @@ namespace SteamBot
         static float sellmult = .05F; //Amount to increase price based off of backpack.tf price when selling
         static float buymult = .04F; //Amount to decrease price basd off of backpack.tf price when buying
 
-        static UInt64 ownerID = 76561198039982559; //Steam ID of the bot admin
+        //static UInt64 ownerID = 76561198039982559; //Steam ID of the bot admin
+        static UInt64 ownerID = 76561198103724342; //Temporary
 
         static Dictionary<string, string> apikeys; //API Keys
 
@@ -218,7 +219,7 @@ namespace SteamBot
             if (msg == "price")
             {
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Getting price data from backpack.tf...");
-                float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
+                float baseprice = (float)API.GetPrices(6, "5021", apikeys["BPTF"]).Item1;
                 float sell = baseprice + (baseprice * sellmult);
                 float buy = baseprice - (baseprice * buymult);
                 sell = API.ScrapifyPrice(sell);
@@ -231,7 +232,7 @@ namespace SteamBot
                 var stock = API.GetCurrencyStock(callback.Sender, apikeys["STEAM"]);
                 int keys = stock.Item1;
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Getting price data from backpack.tf...");
-                float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
+                float baseprice = (float)API.GetPrices(6, "5021", apikeys["BPTF"]).Item1;
                 float buy = baseprice - (baseprice * buymult);
                 buy = API.ScrapifyPrice(buy);
                 float totalPay = keys * buy;
@@ -269,6 +270,29 @@ namespace SteamBot
                     File.WriteAllText("data/help.txt", "Tell the bot owner to fill out their help.txt!");
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, File.ReadAllText("data/help.txt"));
             }
+            if (msg == "offer")
+            {
+                friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Hold on a second while I check the trade offer...");
+                float offertotal = API.GetTradeOfferRefinedMetal(apikeys["STEAM"], apikeys["BPTF"], callback.Sender.ConvertToUInt64().ToString());
+                float sellingtotal = API.GetTradeOfferSellingRefinedMetal(apikeys["STEAM"], apikeys["BPTF"], callback.Sender.ConvertToUInt64().ToString());
+                if(offertotal == -1F)
+                    friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "There was an error with the internet on my end. Please try again.");
+                else{
+                    friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("The items you offered me in your trade offer are worth {0} refined, and the items you are asking for are worth {1} refined.", offertotal, sellingtotal));
+                    if (offertotal < sellingtotal)
+                    {
+                        friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Please add more items");
+                        API.DeclineTradeOffer(apikeys["STEAM"], callback.Sender.ConvertToUInt64().ToString());
+                    }
+                    else {
+                        
+                    }
+                }
+            }
+            if(msg == "id")
+            {
+                friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("When making a trade offer, please set the message as {0}.", callback.Sender.ConvertToUInt64().ToString()));
+            }
             if (callback.Sender.ConvertToUInt64() == ownerID)
             {
                 string[] cmds = msg.Split();
@@ -276,7 +300,7 @@ namespace SteamBot
                     try
                     {
                         sellmult = (float)Convert.ToDouble(cmds[1]);
-                        float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
+                        float baseprice = (float)API.GetPrices(6, "5021", apikeys["BPTF"]).Item1;
                         float sell = baseprice + (baseprice * sellmult);
                         sell = API.ScrapifyPrice(sell);
                         friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Selling multiplier changed to {0}. Now selling keys for {1} refined", Convert.ToDouble(cmds[1]), sell));
@@ -292,7 +316,7 @@ namespace SteamBot
                     try
                     {
                         buymult = (float)Convert.ToDouble(cmds[1]);
-                        float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
+                        float baseprice = (float)API.GetPrices(6, "5021", apikeys["BPTF"]).Item1;
                         float buy = baseprice - (baseprice * buymult);
                         buy = API.ScrapifyPrice(buy);
                         friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Buying multiplier changed to {0}. Now Buying keys for {1} refined", Convert.ToDouble(cmds[1]), buy));
@@ -306,7 +330,7 @@ namespace SteamBot
                 if (cmds[0] == "profit")
                 {
                     friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Getting price data from backpack.tf...");
-                    float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
+                    float baseprice = (float)API.GetPrices(6, "5021", apikeys["BPTF"]).Item1;
                     float sell = baseprice + (baseprice * sellmult);
                     float buy = baseprice - (baseprice * buymult);
                     sell = API.ScrapifyPrice(sell);
