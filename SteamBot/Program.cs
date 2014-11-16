@@ -11,6 +11,7 @@ using SteamKit2;
 
 namespace SteamBot
 {
+
     class MainClass
     {
         static SteamClient client;
@@ -31,19 +32,22 @@ namespace SteamBot
 
         static UInt64 ownerID = 76561198039982559; //Steam ID of the bot admin
 
+        static Dictionary<string, string> apikeys; //API Keys
+
         public static void Main(string[] args)
         {
+            apikeys = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("data/apikeys.json"));
             API.DeserializePoints();
-            if (!File.Exists("login.json"))
+            if (!File.Exists("data/login.json"))
             {
                 Console.WriteLine("Your login info needs to be cached.");
                 Console.Write("Username? ");
                 user = Console.ReadLine();
                 Console.Write("Password? ");
                 pass = Console.ReadLine();
-                File.WriteAllText("login.json", Newtonsoft.Json.JsonConvert.SerializeObject(new KeyValuePair<string, string>(user, pass)));
+                File.WriteAllText("data/login.json", Newtonsoft.Json.JsonConvert.SerializeObject(new KeyValuePair<string, string>(user, pass)));
             }
-            var login = Newtonsoft.Json.JsonConvert.DeserializeObject<KeyValuePair<string, string>>(File.ReadAllText("login.json"));
+            var login = Newtonsoft.Json.JsonConvert.DeserializeObject<KeyValuePair<string, string>>(File.ReadAllText("data/login.json"));
             user = login.Key;
             pass = login.Value;
             client = new SteamClient();
@@ -85,8 +89,6 @@ namespace SteamBot
             new Callback<SteamUser.AccountInfoCallback>(OnAccountInfo, manager);
             //SteamFriends
             new Callback<SteamFriends.FriendsListCallback>(OnFriendsList, manager);
-            new Callback<SteamFriends.PersonaStateCallback>(OnPersonaState, manager);
-            new Callback<SteamFriends.FriendAddedCallback>(OnFriendAdded, manager);
             new Callback<SteamFriends.FriendMsgCallback>(OnMsg, manager);
         }
 
@@ -101,9 +103,9 @@ namespace SteamBot
 
             Console.WriteLine("Connected to Steam. Logging in as {0}.", user);
             byte[] sentryhash = null;
-            if (File.Exists("sentry.bin"))
+            if (File.Exists("data/sentry.bin"))
             {
-                byte[] sentryfile = File.ReadAllBytes("sentry.bin");
+                byte[] sentryfile = File.ReadAllBytes("data/sentry.bin");
                 sentryhash = CryptoHelper.SHAHash(sentryfile);
             }
             steamuser.LogOn(new SteamUser.LogOnDetails
@@ -165,7 +167,7 @@ namespace SteamBot
         {
             Console.WriteLine("Updating sentryfile...");
             byte[] sentryHash = CryptoHelper.SHAHash(callback.Data);
-            File.WriteAllBytes("sentry.bin", callback.Data);
+            File.WriteAllBytes("data/sentry.bin", callback.Data);
             steamuser.SendMachineAuthResponse(new SteamUser.MachineAuthDetails
             {
                 JobID = callback.JobID,
@@ -205,30 +207,19 @@ namespace SteamBot
             }
         }
 
-        static void OnPersonaState(SteamFriends.PersonaStateCallback callback)
-        {
-
-        }
-
-        static void OnFriendAdded(SteamFriends.FriendAddedCallback callback)
-        {
-            //Console.WriteLine("{0} is now a friend", callback.PersonaName);
-            //client.Disconnect();
-        }
-
         static void OnMsg(SteamFriends.FriendMsgCallback callback)
         {
             string msg = callback.Message;
             if (msg == "stock")
             {
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Geting Steam backpack data...");
-                var stock = API.GetCurrencyStock(steamuser.SteamID);
+                var stock = API.GetCurrencyStock(steamuser.SteamID, apikeys["STEAM"]);
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Keys: {0}, Refined Metal: {1}", stock.Key, stock.Value));
             }
             if (msg == "price")
             {
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Getting price data from backpack.tf...");
-                float baseprice = (float)API.GetPrices("5021");
+                float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
                 float sell = baseprice + (baseprice * sellmult);
                 float buy = baseprice - (baseprice * buymult);
                 sell = API.ScrapifyPrice(sell);
@@ -238,10 +229,10 @@ namespace SteamBot
             if (msg == "keyval")
             {
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Geting Steam backpack data...");
-                var stock = API.GetCurrencyStock(callback.Sender);
+                var stock = API.GetCurrencyStock(callback.Sender, apikeys["STEAM"]);
                 int keys = stock.Key;
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Getting price data from backpack.tf...");
-                float baseprice = (float)API.GetPrices("5021");
+                float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
                 float buy = baseprice - (baseprice * buymult);
                 buy = API.ScrapifyPrice(buy);
                 float totalPay = keys * buy;
@@ -274,7 +265,7 @@ namespace SteamBot
             }
             if (msg == "help")
             {
-                friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, File.ReadAllText("help.txt"));
+                friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, File.ReadAllText("data/help.txt"));
             }
             if (callback.Sender.ConvertToUInt64() == ownerID)
             {
@@ -283,7 +274,7 @@ namespace SteamBot
                     try
                     {
                         sellmult = (float)Convert.ToDouble(cmds[1]);
-                        float baseprice = (float)API.GetPrices("5021");
+                        float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
                         float sell = baseprice + (baseprice * sellmult);
                         sell = API.ScrapifyPrice(sell);
                         friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Selling multiplier changed to {0}. Now selling keys for {1} refined", Convert.ToDouble(cmds[1]), sell));
@@ -299,7 +290,7 @@ namespace SteamBot
                     try
                     {
                         buymult = (float)Convert.ToDouble(cmds[1]);
-                        float baseprice = (float)API.GetPrices("5021");
+                        float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
                         float buy = baseprice - (baseprice * buymult);
                         buy = API.ScrapifyPrice(buy);
                         friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Buying multiplier changed to {0}. Now Buying keys for {1} refined", Convert.ToDouble(cmds[1]), buy));
@@ -313,7 +304,7 @@ namespace SteamBot
                 if (cmds[0] == "profit")
                 {
                     friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Getting price data from backpack.tf...");
-                    float baseprice = (float)API.GetPrices("5021");
+                    float baseprice = (float)API.GetPrices("5021", apikeys["BPTF"]);
                     float sell = baseprice + (baseprice * sellmult);
                     float buy = baseprice - (baseprice * buymult);
                     sell = API.ScrapifyPrice(sell);

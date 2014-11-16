@@ -30,7 +30,7 @@ namespace SteamBot
         //This method fetches the amount of Keys and Refined Metal from any given Steam inventory
         //As a rule, I try to keep all downloads into strings in order to reduce filesystem footprint. However, this causes a bit more RAM usage.
         //TODO Cache API Results
-        public static KeyValuePair<int, int> GetCurrencyStock(UInt64 ID)
+        public static KeyValuePair<int, int> GetCurrencyStock(UInt64 ID, string steamapi)
         {
             var items = new List<KeyValuePair<int, int>>();
             //The key is the amount of keys, and the value is the amount of refined metal
@@ -39,7 +39,7 @@ namespace SteamBot
             try
             {
                 WebClient client = new WebClient();
-                String backpackFile = client.DownloadString("http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=C82BCA5DD2DFE549BE112B33510C0276&steamid=" + ID);
+                String backpackFile = client.DownloadString("http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=" + steamapi + "&steamid=" + ID);
                 dynamic result = Newtonsoft.Json.JsonConvert.DeserializeObject(backpackFile);
 
                 if (result.result.status == 15)
@@ -79,11 +79,11 @@ namespace SteamBot
         //The dictionary is deserialized when the program starts, and serialized everytime points are added and every time there is a graceful shutdown
         public static void DeserializePoints()
         {
-            if (!File.Exists("points.json"))
+            if (!File.Exists("data/points.json"))
             {
-                File.WriteAllText("points.json", "{\"76561198039982559\":0}");
+                File.WriteAllText("data/points.json", "{\"76561198039982559\":0}");
             }
-            string json = File.ReadAllText("points.json");
+            string json = File.ReadAllText("data/points.json");
             points = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<long, int>>(json);
             Console.WriteLine();
         }
@@ -91,7 +91,7 @@ namespace SteamBot
         public static void SerializePoints()
         {
             string serial = Newtonsoft.Json.JsonConvert.SerializeObject(points);
-            File.WriteAllText("points.json", serial);
+            File.WriteAllText("data/points.json", serial);
         }
 
         public static void AddPoints(long ID, int point)
@@ -116,10 +116,10 @@ namespace SteamBot
         //As of now, it only works for Craftable, Tradable, and the first quality of the given item.
         //The method was made primarily with keys in mind
         //TODO Cache API result
-        public static double GetPrices(string defindex)
+        public static double GetPrices(string defindex, string bptfapi)
         {
             WebClient client = new WebClient();
-            string priceFile = client.DownloadString("http://backpack.tf/api/IGetPrices/v4/?key=514f66754bd7b8325a00000d");
+            string priceFile = client.DownloadString("http://backpack.tf/api/IGetPrices/v4/?key=" + bptfapi);
             dynamic result = Newtonsoft.Json.JsonConvert.DeserializeObject(priceFile);
             double keyprice = 0;
             //Big nasty JSON parse function. Cmon, Brad, fix your API. Perhaps a feature to fetch data for a defindex via the URL?

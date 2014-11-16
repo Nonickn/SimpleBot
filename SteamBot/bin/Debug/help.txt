@@ -1,5 +1,0 @@
-Commands:
-stock - shows how many keys and refined metal the bot has
-price - shows how much the bot will buy and sell keys for
-keyval - shows how much the bot can buy all of your keys for
-points - shows how many loyalty points you have
