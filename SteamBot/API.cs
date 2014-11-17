@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Net;
@@ -55,7 +56,8 @@ namespace SteamBot
                     int quality = itemdatum.Item1;
                     if (defindex == "5002")
                         total++;
-                    else if (defindex == "5021"){
+                    else if (defindex == "5021")
+                    {
                         float keyprice = GetPrices(6, "5021", bptfapi).Item1;
                         keyprice = ScrapifyPrice(keyprice - (keyprice * .04F));
                         total += keyprice;
@@ -70,6 +72,8 @@ namespace SteamBot
                                     total += ScrapifyPrice(price.Item1 - (price.Item1 * .04F));
                                 else
                                     total += ScrapifyPrice(price.Item1 * .75F);
+                                if (price.Item1 == .05F)
+                                    total += .05F;
                                 break;
                             case "keys":
                                 float keyprice = GetPrices(6, "5021", bptfapi).Item1;
@@ -79,9 +83,10 @@ namespace SteamBot
                         }
                     }
                 }
+                Console.WriteLine("Raw selling total: {0}", total);
                 return ScrapifyPrice(total);
             }
-            catch (System.Net.WebException)
+            catch (Exception)
             {
                 return -1;
             }
@@ -142,6 +147,8 @@ namespace SteamBot
                                     total += ScrapifyPrice(price.Item1 + (price.Item1 * .05F));
                                 else
                                     total += ScrapifyPrice(price.Item1 * 1.15F);
+                                if (price.Item1 == .05F)
+                                    total += .11F;
                                 break;
                             case "keys":
                                 float keyprice = GetPrices(6, "5021", bptfapi).Item1;
@@ -151,12 +158,28 @@ namespace SteamBot
                         }
                     }
                 }
+                Console.WriteLine("Raw buying total: {0}", total);
                 return ScrapifyPrice(total);
             }
-            catch (System.Net.WebException)
+            catch (Exception)
             {
                 return -1;
             }
+        }
+
+        public static void AcceptTradeOffer(string msg, string user, string pass)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            var values = new NameValueCollection
+            {
+                { "username", user },
+                { "password", pass },
+            };
+            client.UploadValues("http://domain.loc/logon.aspx", values);
+
+            // If the previous call succeeded we now have a valid authentication cookie
+            // so we could download the protected page
+            string result = client.DownloadString("http://domain.loc/testpage.aspx");
         }
 
         public static void DeclineTradeOffer(string steamapi, string msg)
@@ -329,7 +352,24 @@ namespace SteamBot
                 Console.WriteLine(e.Message);
             }
             Console.WriteLine("Parse complete");
-            return new Tuple<float,string>(-1F, "");
+            return new Tuple<float, string>(-1F, "");
         }
     }
+
+    public class CookieAwareWebClient : WebClient
+    {
+        public CookieAwareWebClient()
+        {
+            CookieContainer = new CookieContainer();
+        }
+        public CookieContainer CookieContainer { get; private set; }
+
+        protected override WebRequest GetWebRequest(Uri address)
+        {
+            var request = (HttpWebRequest)base.GetWebRequest(address);
+            request.CookieContainer = CookieContainer;
+            return request;
+        }
+    }
+
 }

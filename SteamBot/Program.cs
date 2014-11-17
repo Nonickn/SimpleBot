@@ -23,13 +23,13 @@ namespace SteamBot
         static string user, pass;
         static string code, auth;
 
-        static string name = "ʢ"; //Steam persona name of the bot
+        static string name = "Dick Master"; //Steam persona name of the bot
 
         static float sellmult = .05F; //Amount to increase price based off of backpack.tf price when selling
         static float buymult = .04F; //Amount to decrease price basd off of backpack.tf price when buying
 
-        //static UInt64 ownerID = 76561198039982559; //Steam ID of the bot admin
-        static UInt64 ownerID = 76561198103724342; //Temporary
+        static UInt64 ownerID = 76561198039982559; //Steam ID of the bot admin
+        //static UInt64 ownerID = 76561198103724342; //Temporary
 
         static Dictionary<string, string> apikeys; //API Keys
 
@@ -156,6 +156,12 @@ namespace SteamBot
             }
 
             Console.WriteLine("Successfully logged on!");
+            float baseprice = (float)API.GetPrices(6, "5021", apikeys["BPTF"]).Item1;
+            float sell = baseprice + (baseprice * sellmult);
+            float buy = baseprice - (baseprice * buymult);
+            sell = API.ScrapifyPrice(sell);
+            buy = API.ScrapifyPrice(buy);
+            friends.SetPersonaName(String.Format("{0} (B: {1} S:{2})", name, buy, sell));
         }
 
         static void OnLogout(SteamUser.LoggedOffCallback callback)
@@ -196,7 +202,7 @@ namespace SteamBot
 
         static void OnFriendsList(SteamFriends.FriendsListCallback callback)
         {
-            friends.SetPersonaName(name);
+            //friends.SetPersonaName(name);
             foreach (var friend in callback.FriendList)
             {
                 if (friend.Relationship == EFriendRelationship.RequestRecipient)
@@ -275,8 +281,13 @@ namespace SteamBot
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Hold on a second while I check the trade offer...");
                 float offertotal = API.GetTradeOfferRefinedMetal(apikeys["STEAM"], apikeys["BPTF"], callback.Sender.ConvertToUInt64().ToString());
                 float sellingtotal = API.GetTradeOfferSellingRefinedMetal(apikeys["STEAM"], apikeys["BPTF"], callback.Sender.ConvertToUInt64().ToString());
+                Console.WriteLine("SellTotal: {0}\nOfferTotal: {1}", sellingtotal, offertotal);
                 if(offertotal == -1F)
                     friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "There was an error with the internet on my end. Please try again.");
+                else if(offertotal == 0 && sellingtotal == 0){
+                    friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "I couldn't find your trade request. Make sure that the trade message is your Steam ID. You can get your Steam ID by sending the message 'id'.\nIf you included your Steam ID in the message, make sure that you have items added on each side of the trade offer. Crates do not count for anything.");
+                    API.DeclineTradeOffer(apikeys["STEAM"], "");
+                } 
                 else{
                     friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("The items you offered me in your trade offer are worth {0} refined, and the items you are asking for are worth {1} refined.", offertotal, sellingtotal));
                     if (offertotal < sellingtotal)
