@@ -226,6 +226,7 @@ namespace SteamBot
             {
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Geting Steam backpack data...");
                 var stock = API.GetCurrencyStock(steamuser.SteamID, apikeys["STEAM"]);
+                API.UpdateStock(steamuser.SteamID.ConvertToUInt64(), apikeys["STEAM"], botnumber);
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, String.Format("Keys: {0}, Refined Metal: {1}", stock.Item1, stock.Item2));
             }
             if (msg == "price")
@@ -284,6 +285,7 @@ namespace SteamBot
             }
             if (msg == "offer")
             {
+                API.UpdateStock(steamuser.SteamID.ConvertToUInt64(), apikeys["STEAM"], botnumber);
                 friends.SendChatMessage(callback.Sender, EChatEntryType.ChatMsg, "Hold on a second while I check the trade offer...");
                 float offertotal = API.GetTradeOfferRefinedMetal(apikeys["STEAM"], apikeys["BPTF"], callback.Sender.ConvertToUInt64().ToString());
                 float sellingtotal = API.GetTradeOfferSellingRefinedMetal(apikeys["STEAM"], apikeys["BPTF"], callback.Sender.ConvertToUInt64().ToString());
@@ -305,6 +307,7 @@ namespace SteamBot
                         
                     }
                 }
+                API.UpdateStock(steamuser.SteamID.ConvertToUInt64(), apikeys["STEAM"], botnumber);
             }
             if(msg == "id")
             {
