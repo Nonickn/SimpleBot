@@ -169,17 +169,7 @@ namespace SteamBot
 
         public static void AcceptTradeOffer(string msg, string user, string pass)
         {
-            CookieAwareWebClient client = new CookieAwareWebClient();
-            var values = new NameValueCollection
-            {
-                { "username", user },
-                { "password", pass },
-            };
-            client.UploadValues("http://domain.loc/logon.aspx", values);
-
-            // If the previous call succeeded we now have a valid authentication cookie
-            // so we could download the protected page
-            string result = client.DownloadString("http://domain.loc/testpage.aspx");
+            
         }
 
         public static void DeclineTradeOffer(string steamapi, string msg)
@@ -354,22 +344,16 @@ namespace SteamBot
             Console.WriteLine("Parse complete");
             return new Tuple<float, string>(-1F, "");
         }
-    }
 
-    public class CookieAwareWebClient : WebClient
-    {
-        public CookieAwareWebClient()
+        public static void UpdateStock(ulong id, string steamapi, int botid)
         {
-            CookieContainer = new CookieContainer();
+            var stock = API.GetCurrencyStock(id, steamapi);
+            WebClient web = new WebClient();
+            string url = String.Format("http://hatstacktf.com/updatestock.php?bot={0}&metal={1}&keys={2}", botid, stock.Item2, stock.Item1);
+            Console.WriteLine(url);
+            string result = web.DownloadString(url);
         }
-        public CookieContainer CookieContainer { get; private set; }
 
-        protected override WebRequest GetWebRequest(Uri address)
-        {
-            var request = (HttpWebRequest)base.GetWebRequest(address);
-            request.CookieContainer = CookieContainer;
-            return request;
-        }
     }
 
 }

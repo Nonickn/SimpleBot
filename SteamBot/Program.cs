@@ -23,7 +23,8 @@ namespace SteamBot
         static string user, pass;
         static string code, auth;
 
-        static string name = "Dick Master"; //Steam persona name of the bot
+        static string name = "Hat Stack"; //Steam persona name of the bot
+        static int botnumber = 1;
 
         static float sellmult = .05F; //Amount to increase price based off of backpack.tf price when selling
         static float buymult = .04F; //Amount to decrease price basd off of backpack.tf price when buying
@@ -35,6 +36,10 @@ namespace SteamBot
 
         public static void Main(string[] args)
         {
+            if (!Directory.Exists("data"))
+            {
+                Directory.CreateDirectory("data");
+            }
             Console.WriteLine("Fork me on GitHub! http://bit.ly/1uABGoK");
             if (!File.Exists("data/apikeys.json"))
             {
@@ -154,14 +159,15 @@ namespace SteamBot
                 isRunning = false;
                 return;
             }
-
-            Console.WriteLine("Successfully logged on!");
+            Console.WriteLine("Getting data...");
             float baseprice = (float)API.GetPrices(6, "5021", apikeys["BPTF"]).Item1;
             float sell = baseprice + (baseprice * sellmult);
             float buy = baseprice - (baseprice * buymult);
             sell = API.ScrapifyPrice(sell);
             buy = API.ScrapifyPrice(buy);
             friends.SetPersonaName(String.Format("{0} (B: {1} S:{2})", name, buy, sell));
+            API.UpdateStock(steamuser.SteamID.ConvertToUInt64(), apikeys["STEAM"], botnumber);
+            Console.WriteLine("Successfully logged on!");
         }
 
         static void OnLogout(SteamUser.LoggedOffCallback callback)
