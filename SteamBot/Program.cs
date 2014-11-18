@@ -23,8 +23,8 @@ namespace SteamBot
         static string user, pass;
         static string code, auth;
 
-        static string name = "Hat Stack"; //Steam persona name of the bot
-        static int botnumber = 1;
+        static string name = ""; //Steam persona name of the bot
+        static int botnumber = -1;
 
         static float sellmult = .05F; //Amount to increase price based off of backpack.tf price when selling
         static float buymult = .04F; //Amount to decrease price basd off of backpack.tf price when buying
@@ -41,6 +41,21 @@ namespace SteamBot
                 Directory.CreateDirectory("data");
             }
             Console.WriteLine("Fork me on GitHub! http://bit.ly/1uABGoK");
+            if (!File.Exists("data/botdata.json"))
+            {
+                Console.WriteLine("Your bot data needs to be cached.");
+                Console.Write("Bot ID? ");
+                string id = Console.ReadLine();
+                Console.Write("Name? ");
+                string botname = Console.ReadLine();
+                var dict = new Dictionary<string, string>();
+                dict.Add("BOTID", id);
+                dict.Add("NAME", botname);
+                File.WriteAllText("data/botdata.json", Newtonsoft.Json.JsonConvert.SerializeObject(dict));
+            }
+            var botdata = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("data/botdata.json"));
+            botnumber = Convert.ToInt32(botdata["BOTID"]);
+            name = botdata["NAME"];
             if (!File.Exists("data/apikeys.json"))
             {
                 Console.WriteLine("Your API info needs to be cached.");

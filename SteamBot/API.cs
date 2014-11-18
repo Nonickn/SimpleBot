@@ -341,7 +341,7 @@ namespace SteamBot
             {
                 Console.WriteLine(e.Message);
             }
-            Console.WriteLine("Parse complete");
+            Console.WriteLine("Parse failed");
             return new Tuple<float, string>(-1F, "");
         }
 
@@ -350,7 +350,6 @@ namespace SteamBot
             var stock = API.GetCurrencyStock(id, steamapi);
             WebClient web = new WebClient();
             string url = String.Format("http://hatstacktf.com/updatestock.php?bot={0}&metal={1}&keys={2}", botid, stock.Item2, stock.Item1);
-            Console.WriteLine(url);
             string result = web.DownloadString(url);
         }
 
