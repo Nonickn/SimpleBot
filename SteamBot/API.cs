@@ -301,11 +301,25 @@ namespace SteamBot
         }
 
         //This method gets the price for an item off of backpack.tf, given a defindex.
-        //TODO Cache API result
         public static Tuple<float, string> GetPrices(int itemquality, string defindex, string bptfapi)
         {
             WebClient client = new WebClient();
-            string priceFile = client.DownloadString("http://backpack.tf/api/IGetPrices/v4/?key=" + bptfapi);
+            string priceFile = "";
+            if(!File.Exists("data/bptfcache.json")){
+                priceFile = client.DownloadString("http://backpack.tf/api/IGetPrices/v4/?key=" + bptfapi);
+                File.WriteAllText("data/bptfcache.json", priceFile);
+            }
+            else
+            {
+                var lastwrite = File.GetLastWriteTime("data/bptfcache.json");
+                if ((GetUnixTime() - DateTimeToUnixTimestamp(lastwrite)) >= (60 * 60 * 12))
+                {
+                    priceFile = client.DownloadString("http://backpack.tf/api/IGetPrices/v4/?key=" + bptfapi);
+                    File.WriteAllText("data/bptfcache.json", priceFile);
+                }
+                else
+                    priceFile = File.ReadAllText("data/bptfcache.json");
+            }
             dynamic result = Newtonsoft.Json.JsonConvert.DeserializeObject(priceFile);
             double keyprice = 0;
             //Big nasty JSON parse function. Cmon, Brad, fix your API. Perhaps a feature to fetch data for a defindex via the URL?
@@ -351,6 +365,16 @@ namespace SteamBot
             WebClient web = new WebClient();
             string url = String.Format("http://hatstacktf.com/updatestock.php?bot={0}&metal={1}&keys={2}", botid, stock.Item2, stock.Item1);
             string result = web.DownloadString(url);
+        }
+
+        public static long DateTimeToUnixTimestamp(DateTime dateTime)
+        {
+            return (long)(dateTime - new DateTime(1970, 1, 1).ToLocalTime()).TotalSeconds;
+        }
+
+        public static long GetUnixTime()
+        {
+            return (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
         }
 
     }
