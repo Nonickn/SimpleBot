@@ -68,11 +68,11 @@
     <Reference Include="System.Threading.Tasks">
       <HintPath>..\packages\Microsoft.Bcl.1.1.9\lib\net40\System.Threading.Tasks.dll</HintPath>
     </Reference>
+    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="API.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="API.cs" />
+    <Compile Include="SteamWeb.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

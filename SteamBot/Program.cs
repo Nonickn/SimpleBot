@@ -22,6 +22,7 @@ namespace SteamBot
         static bool isRunning;
         static string user, pass;
         static string code, auth;
+        static string nonce;
 
         static string name = ""; //Steam persona name of the bot
         static int botnumber = -1;
@@ -107,6 +108,7 @@ namespace SteamBot
             new Callback<SteamUser.LoggedOffCallback>(OnLogout, manager);
             new Callback<SteamUser.UpdateMachineAuthCallback>(OnAuth, manager);
             new Callback<SteamUser.AccountInfoCallback>(OnAccountInfo, manager);
+            new Callback<SteamUser.LoginKeyCallback>(OnLoginKey, manager);
             //SteamFriends
             new Callback<SteamFriends.FriendsListCallback>(OnFriendsList, manager);
             new Callback<SteamFriends.FriendMsgCallback>(OnMsg, manager);
@@ -182,7 +184,20 @@ namespace SteamBot
             buy = API.ScrapifyPrice(buy);
             friends.SetPersonaName(String.Format("{0} (B: {1} S:{2})", name, buy, sell));
             API.UpdateStock(steamuser.SteamID.ConvertToUInt64(), apikeys["STEAM"], botnumber);
+            nonce = callback.WebAPIUserNonce;
             Console.WriteLine("Successfully logged on!");
+        }
+
+        static void OnLoginKey(SteamUser.LoginKeyCallback callback)
+        {
+            DoWebCrap(nonce, callback.UniqueID.ToString());
+        }
+
+        static void DoWebCrap(string nonce, string uid)
+        {
+            string sessionId, token, tokensecure;
+            bool authd = SteamWeb.Authenticate(uid, client, out sessionId, out token, out tokensecure, nonce);
+            API.StartWebClient(sessionId, token, tokensecure);
         }
 
         static void OnLogout(SteamUser.LoggedOffCallback callback)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -12,6 +13,17 @@ namespace SteamBot
     {
 
         public static Dictionary<long, int> points;
+        private static readonly CookieContainer Cookies = new CookieContainer();
+
+        public static string SessionId { get; private set; }
+
+        public static string SteamLogin { get; private set; }
+
+        public static string SteamLoginSecure { get; private set; }
+
+        internal static JsonSerializerSettings JsonSerializerSettings { get; set; }
+
+        internal const string SendUrl = "https://steamcommunity.com/tradeoffer/new/send";
 
         public static float GetTradeOfferRefinedMetal(string steamapi, string bptfapi, string msg)
         {
@@ -375,6 +387,49 @@ namespace SteamBot
         public static long GetUnixTime()
         {
             return (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+        }
+
+        public static void StartWebClient(string sessionId, string token, string tokensecure)
+        {
+            Cookies.Add(new Cookie("sessionid", sessionId, String.Empty, "steamcommunity.com"));
+            Cookies.Add(new Cookie("steamLogin", token, String.Empty, "steamcommunity.com"));
+            Cookies.Add(new Cookie("steamLoginSecure", tokensecure, String.Empty, "steamcommunity.com"));
+
+            SessionId = sessionId;
+            SteamLogin = token;
+            SteamLoginSecure = tokensecure;
+
+            JsonSerializerSettings = new JsonSerializerSettings();
+            JsonSerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
+            JsonSerializerSettings.Formatting = Formatting.None;
+        }
+
+        public string Fetch(string url, string method, NameValueCollection data = null, bool ajax = false, string referer = "")
+        {
+            try
+            {
+                HttpWebResponse response = SteamWeb.Request(url, method, data, Cookies, ajax, referer);
+                return ReadWebStream(response);
+            }
+            catch (WebException we)
+            {
+                return ReadWebStream(we.Response);
+            }
+        }
+
+        private static string ReadWebStream(WebResponse webResponse)
+        {
+            using (var stream = webResponse.GetResponseStream())
+            {
+                if (stream != null)
+                {
+                    using (var reader = new StreamReader(stream))
+                    {
+                        return reader.ReadToEnd();
+                    }
+                }
+            }
+            return null;
         }
 
     }
